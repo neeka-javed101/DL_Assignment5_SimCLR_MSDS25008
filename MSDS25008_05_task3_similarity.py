@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.utils.data import DataLoader
 import torch.nn as nn
+import seaborn as sns
 from PIL import Image
 SEED=2026
 random.seed(SEED)
@@ -93,36 +94,23 @@ print(f"Same Image Two Views Similarity: {same_similarity_mean:.4f}")
 print(f"Different Images Similarity: {different_similarity_mean:.4f}")
 print(f"Difference: {same_similarity_mean - different_similarity_mean:.4f}")
 print("="*60)
-plt.figure(figsize=(8,5))
 
-plt.hist(
-    same_similarity.cpu().numpy(),
-    bins=20,
-    alpha=0.6,
-    label="Same Image (Positive Pairs)",
-    color='blue',
-    edgecolor='black'
-)
+all_features = torch.cat([features1, features2], dim=0)
+similarity_matrix = torch.mm(all_features, all_features.t()).cpu().numpy()
 
-plt.hist(
-    different_similarity.cpu().numpy(),
-    bins=20,
-    alpha=0.6,
-    label="Different Images (Negative Pairs)",
-    color='red',
-    edgecolor='black'
-)
-plt.xlabel("Cosine Similarity")
-plt.ylabel("Frequency")
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.heatmap(similarity_matrix, cmap='coolwarm', center=0, ax=ax, cbar_kws={'label': 'Cosine Similarity'})
+ax.set_title("Feature Similarity Matrix Before Training\n(Random Encoder)", fontsize=12)
+ax.set_xlabel("Feature Index")
+ax.set_ylabel("Feature Index")
 
-plt.title("Feature Similarity Before Training")
+N = features1.shape[0]
+ax.axhline(y=N, color='white', linewidth=2)
+ax.axvline(x=N, color='white', linewidth=2)
 
-plt.legend()
-plt.grid(True, alpha=0.3)
 plt.tight_layout()
-
 plt.savefig("results/similarity_matrix_before_training.png", dpi=150, bbox_inches='tight')
 plt.close()
 
-print("\n✓ Similarity histogram saved successfully!")
+print("\n✓ Similarity matrix heatmap saved!")
 print("✓ Saved: results/similarity_matrix_before_training.png")
