@@ -139,8 +139,9 @@ for epoch in range(epochs):
     avg_loss = total_loss / len(loader)
     train_losses.append(avg_loss)  
     print(f"Epoch [{epoch+1}/{epochs}] Loss: {avg_loss:.4f}")
-encoder = model.encoder
-torch.save(model.encoder.state_dict(), "models/simclr_encoder.pt")
+backbone = model.encoder.encoder
+torch.save(backbone.state_dict(), "models/simclr_encoder.pt")
+
 print("✓ SimCLR encoder saved!")
 plt.figure(figsize=(10, 6))
 plt.plot(train_losses, linewidth=2)
@@ -157,13 +158,13 @@ print("\n" + "="*60)
 print("Computing feature similarity after SimCLR training...")
 print("="*60)
 
-encoder.eval()
+backbone.eval()
 view1_test, view2_test = next(iter(loader))
 view1_test, view2_test = view1_test.to(device), view2_test.to(device)
 
 with torch.no_grad():
-    features1_after = encoder(view1_test)
-    features2_after = encoder(view2_test)
+    features1_after = backbone(view1_test)
+    features2_after = backbone(view2_test)
 
 features1_after = F.normalize(features1_after, dim=1)
 features2_after = F.normalize(features2_after, dim=1)
