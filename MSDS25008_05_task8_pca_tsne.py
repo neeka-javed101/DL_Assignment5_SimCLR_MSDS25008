@@ -1,6 +1,3 @@
-# rollNumber_05_task8_pca_tsne.py
-# Task 8: PCA/t-SNE Feature Visualization + metrics.json + test_predictions.csv
-
 import os
 import json
 import torch
@@ -144,7 +141,6 @@ plot_embeddings(finetuned_tsne, labels,
                 title="t-SNE: Fine-tuned Encoder",
                 save_path="results/finetuned_encoder_pca_or_tsne.png")
 
-
 print("\n── Generating metrics.json ──")
 
 # Final metrics dictionary
@@ -170,7 +166,6 @@ metrics ={
 
 with open("results/metrics.json", "w") as f:
     json.dump(metrics, f, indent=4)
-
 print("✓ Saved: results/metrics.json")
 # Generate test_predictions.csv
 
@@ -216,3 +211,5 @@ print("results/simclr_encoder_pca_or_tsne.png")
 print("results/finetuned_encoder_pca_or_tsne.png")
 print("results/metrics.json")
 print("results/test_predictions.csv")
+
+
