@@ -8,11 +8,12 @@ import seaborn as sns
 import torchvision.transforms as T
 import torch.nn.functional as F
 import torch.nn as nn
-import torch.utils.data as dataloaders
+import torch.utils.data as dataloader
 from torch.utils.data import DataLoader, Subset
 from  tqdm import tqdm
 from PIL import Image
 from torch.utils.data import DataLoader
+# Set random seeds for reproducibility
 SEED=2026
 random.seed(SEED)
 np.random.seed(SEED)
@@ -20,11 +21,13 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed_all(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+# Check for GPU availability
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 os.makedirs("models", exist_ok=True)
 os.makedirs('results', exist_ok=True)
 os.makedirs('graphs', exist_ok=True)
+# Function to load indices from text files
 
 augmentations = T.Compose([
     T.RandomResizedCrop(32, scale=(0.2, 1.0)),
@@ -34,6 +37,7 @@ augmentations = T.Compose([
     T.ToTensor(),
     T.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
 ])  
+# Data preparation and similarity analysis before training
 class SimCLRDataset(torchvision.datasets.CIFAR10):
     def __init__(self, root, train=True, download=True, transform=None):
         super().__init__(root=root, train=train, download=download, transform=None)
@@ -55,6 +59,7 @@ class SimCLREncoder(nn.Module):
 
     def forward(self, x):
         return self.encoder(x)  # (B, 512)
+    # simCLR training loop and evaluation
 
 class SimCLRModel(nn.Module):
     def __init__(self):
@@ -120,6 +125,7 @@ def nt_xent_loss(z1, z2, temperature=0.5):
     
     loss = F.cross_entropy(logits, labels)
     return loss
+# Train SimCLR modeland save encoder weights
 model = SimCLRModel().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)  
 epochs = 50
@@ -143,6 +149,7 @@ backbone = model.encoder.encoder
 torch.save(backbone.state_dict(), "models/simclr_encoder.pt")
 
 print("✓ SimCLR encoder saved!")
+# Plot training loss curve
 plt.figure(figsize=(10, 6))
 plt.plot(train_losses, linewidth=2)
 plt.xlabel("Epoch", fontsize=12)
@@ -157,6 +164,7 @@ print("✓ Loss curve saved to graphs/simclr_pretraining_loss.png")
 print("\n" + "="*60)
 print("Computing feature similarity after SimCLR training...")
 print("="*60)
+# Set backbone to evaluation modeand compute features for a batch of test images
 
 backbone.eval()
 view1_test, view2_test = next(iter(loader))
@@ -180,7 +188,7 @@ different_similarity_after_mean = different_similarity_after.mean().item()
 print(f"Same Image Two Views Similarity After: {same_similarity_after_mean:.4f}")
 print(f"Different Images Similarity After:    {different_similarity_after_mean:.4f}")
 print("="*60)
-
+# Generate similarity matrix heatmap after training
 
 all_features_after = torch.cat([features1_after, features2_after], dim=0)
 similarity_matrix_after = torch.mm(all_features_after, all_features_after.t()).cpu().numpy()

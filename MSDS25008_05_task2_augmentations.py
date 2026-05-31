@@ -5,6 +5,7 @@ import numpy as np
 import torchvision
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
+# Set random seeds for reproducibility
 SEED=2026
 random.seed(SEED)
 np.random.seed(SEED)
@@ -18,6 +19,7 @@ simclr_transforms = T.Compose([
     T.Normalize(mean=(0.4914, 0.4822, 0.4465),
                 std=(0.2470, 0.2435, 0.2616))
 ])
+# Function to load indices from text files
 class TwoViewTransform:
     def __init__(self, base_transform):
         self.base_transform = base_transform
@@ -34,7 +36,7 @@ fig, axes = plt.subplots(
     3,
     figsize=(9, 30)
 )
-
+# Visualize original and augmented views for 10 random samples
 raw_dataset = torchvision.datasets.CIFAR10(
     root='./data', 
     train=True, 
@@ -43,7 +45,7 @@ raw_dataset = torchvision.datasets.CIFAR10(
 )
 def tensor_to_image(tensor):
     """Convert normalized tensor [C, H, W] to numpy image [H, W, C]"""
-    # ✅ Denormalize (reverse the Normalize transform)
+    #  Denormalize (reverse the Normalize transform)
     denormalize = T.Compose([
         T.Normalize(mean=[-0.4914/0.2470, -0.4822/0.2435, -0.4465/0.2616],
                     std=[1/0.2470, 1/0.2435, 1/0.2616])
@@ -59,6 +61,7 @@ fig, axes = plt.subplots(10, 3, figsize=(9, 30))
 class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 print("Generating augmentation examples...")
+# Loop through 10 random samples and visualize original + two augmented views
 for i in range(10):
     raw_image, label = raw_dataset[i] 
     view1, view2 = two_view_transform(raw_image)  

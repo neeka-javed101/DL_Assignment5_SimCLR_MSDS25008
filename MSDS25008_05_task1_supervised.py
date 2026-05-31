@@ -9,6 +9,7 @@ from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from torch.utils.data import DataLoader,Subset
 import torchvision.transforms as T
+# Set random seeds for reproducibility
 SEED=2026
 random.seed(SEED)
 np.random.seed(SEED)
@@ -33,6 +34,7 @@ test_transforms = T.Compose([
     T.ToTensor(),
     T.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
 ])
+# Load datasets and create dataloaders for the specified splits
 train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transforms)
 test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=test_transforms)
 train_indices = load_split_indices("splits/train_labeled_10percent.txt")
@@ -51,6 +53,7 @@ model.fc = nn.Linear(512, 10)
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
+# Training loop with early stopping
 num_epochs = 30
 train_losses, val_losses, train_accuracies, val_accuracies = [], [], [], []
 best_val_accuracy = 0
@@ -58,7 +61,7 @@ patience = 3
 patience_counter = 0
 
     
-    
+    # Forward pass and loss computation
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
@@ -85,7 +88,7 @@ for epoch in range(num_epochs):
     val_running_loss = 0.0
     val_correct = 0
     val_total = 0
-
+# Validation loop
     with torch.no_grad():
         for images, labels in tqdm(val_loader, desc=f"Epoch {epoch+1} [VAL]"):
             images, labels = images.to(device), labels.to(device)
@@ -172,7 +175,7 @@ test_acc = 100 * correct / total
 print(f"\nFinal Test Accuracy: {test_acc:.2f}%")
 
 
-# ---------------- CONFUSION MATRIX ---------------- #
+ #CONFUSION MATRIX 
 
 cm = confusion_matrix(
     all_labels,

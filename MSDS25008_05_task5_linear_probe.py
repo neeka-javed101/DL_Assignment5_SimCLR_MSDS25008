@@ -75,7 +75,6 @@ for epoch in range(20):
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
     train_acc = 100 * correct / total
-
     random_classifier.eval()
     val_correct = 0
     val_total = 0
@@ -93,7 +92,6 @@ for epoch in range(20):
     if val_acc > best_random_val_acc:
         best_random_val_acc = val_acc
         torch.save(random_classifier.state_dict(), "models/best_random_classifier.pt")
-
 random_classifier.load_state_dict(torch.load("models/best_random_classifier.pt"))
 random_classifier.eval()
 correct = 0

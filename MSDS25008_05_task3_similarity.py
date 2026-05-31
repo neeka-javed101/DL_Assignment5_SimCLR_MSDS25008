@@ -11,10 +11,11 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import seaborn as sns
 from PIL import Image
+# Set random seeds for reproducibility
 SEED=2026
 random.seed(SEED)
 np.random.seed(SEED)
-torch.manual_seed(SEED)
+torch.manual_seed(42)
 torch.cuda.manual_seed_all(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -29,6 +30,7 @@ augmentations = T.Compose([
     T.ToTensor(),
     T.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
 ])
+# Function to load indices from text files
 class TwoViewsTransform:
     def __init__(self, base_transform):
         self.base_transform = base_transform
@@ -52,38 +54,39 @@ class SimCLRDataset(torchvision.datasets.CIFAR10):
 base_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True)
 two_view_transform = TwoViewsTransform(augmentations)
 dataset = SimCLRDataset(root='./data', train=True, download=True, transform=two_view_transform)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=256, shuffle=False)
+# Build a random encoder (ResNet-18 with random weights)
 model = torchvision.models.resnet18(weights=None)
 model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 model.maxpool = nn.Identity()
-model = model.to(device)
-def create_encoder(model):
-    encoder = nn.Sequential(
-        model.conv1,
-        model.bn1,
-        model.relu,
-        model.layer1,
-        model.layer2,
-        model.layer3,
-        model.layer4,
-        model.avgpool,
-        nn.Flatten()
-    )
-    return encoder
+model.fc = nn.Identity()   
+for name, module in model.named_modules():
+    if isinstance(module, nn.BatchNorm2d):
+        # reset to identity-like behavior
+        module.weight.data.fill_(1)
+        module.bias.data.fill_(0)
+        module.running_mean.fill_(0)
+        module.running_var.fill_(1)
 
-encoder = create_encoder(model)
-encoder = encoder.to(device)
-encoder.eval()
+model = model.to(device)
+model.eval()
+# Extract features for two views of the same images
+
 view1, view2, labels = next(iter(dataloader))
 view1, view2 = view1.to(device), view2.to(device)
 with torch.no_grad():
-    features1 = encoder(view1)
-    features2 = encoder(view2)
+    features1 = model(view1)
+    features2 = model(view2)
+print(f"features1 shape: {features1.shape}")
+print(f"features1 sample values: {features1[0][:5]}")
+print(f"features1 norm before normalize: {features1.norm(dim=1).mean():.4f}")
 features1 = F.normalize(features1, dim=1)
 features2 = F.normalize(features2, dim=1)
 same_similarity =F.cosine_similarity(features1, features2)
 same_similarity_mean = same_similarity.mean().item()
+torch.manual_seed(SEED)
 shuffled_indices = torch.randperm(features2.size(0))
+
 shuffled_features2 = features2[shuffled_indices]
 different_similarity = F.cosine_similarity(features1, shuffled_features2)
 different_similarity_mean = different_similarity.mean().item()
